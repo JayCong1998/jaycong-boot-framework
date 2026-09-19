@@ -1,0 +1,15 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: jaycong-order-service
+  datasource:
+    generate-unique-name: true
+  sql:
+    init:
+      mode: embedded
+      schema-locations: classpath:db/order-h2.sql
+stock:
+  base-url: ${STOCK_BASE_URL:http://localhost:8082}
+  connect-timeout: ${STOCK_CONNECT_TIMEOUT:2s}
+  read-timeout: ${STOCK_READ_TIMEOUT:5s}

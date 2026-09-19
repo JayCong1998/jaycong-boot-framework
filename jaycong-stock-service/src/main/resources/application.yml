@@ -1,0 +1,11 @@
+server:
+  port: 8082
+spring:
+  application:
+    name: jaycong-stock-service
+  datasource:
+    generate-unique-name: true
+  sql:
+    init:
+      mode: embedded
+      schema-locations: classpath:db/stock-h2.sql

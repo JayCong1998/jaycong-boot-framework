@@ -1,0 +1,7 @@
+spring:
+  datasource:
+    generate-unique-name: true
+  sql:
+    init:
+      mode: embedded
+      schema-locations: classpath:db/schema-h2.sql
