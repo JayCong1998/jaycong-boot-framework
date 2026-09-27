@@ -20,6 +20,7 @@
         <module>jaycong-example</module>
         <module>jaycong-stock-service</module>
         <module>jaycong-order-service</module>
+        <module>jaycong-jvm</module>
     </modules>
 
     <properties>
