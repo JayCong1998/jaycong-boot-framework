@@ -21,6 +21,7 @@
         <module>jaycong-stock-service</module>
         <module>jaycong-order-service</module>
         <module>jaycong-jvm</module>
+        <module>jaycong-juc</module>
     </modules>
 
     <properties>
