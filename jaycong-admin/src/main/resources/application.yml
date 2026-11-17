@@ -1,0 +1,73 @@
+server:
+  port: ${ADMIN_PORT:8088}
+
+spring:
+  config:
+    import:
+      - classpath:bootstrap.yml
+  data:
+    redis:
+      host: ${AUTH_REDIS_HOST:localhost}
+      port: ${AUTH_REDIS_PORT:6379}
+      password: ${AUTH_REDIS_PASSWORD:}
+      database: ${AUTH_REDIS_DATABASE:0}
+      connect-timeout: 3s
+      timeout: 3s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 86400
+  is-read-cookie: false
+  is-read-body: false
+  is-log: false
+  token-style: uuid
+  is-share: false
+  token-session-check-login: true
+
+# 控制台展示同步请求的 requestId，便于关联业务及异常日志。
+logging:
+  charset:
+    console: UTF-8
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [${spring.application.name:application}] [%thread] [requestId=%X{requestId:-}] %logger{40} - %msg%n%wEx"
+  level:
+    root: INFO
+    io.github.jaycong: INFO
+
+spring.cloud.openfeign.client.config.authUser:
+  connectTimeout: 2000
+  readTimeout: 5000
+  loggerLevel: none
+
+jaycong:
+  rpc:
+    user:
+      token: ${USER_SERVICE_TOKEN:}
+
+jaycong.rpc.admin.token: ${ADMIN_SERVICE_TOKEN:}
+spring.cloud.openfeign.client.config.adminMemberManagement:
+  connectTimeout: 2000
+  readTimeout: 5000
+  loggerLevel: none
+spring.cloud.openfeign.client.config.adminMemberOperationManagement:
+  connectTimeout: 2000
+  readTimeout: 5000
+  loggerLevel: none
+spring.cloud.openfeign.client.config.adminGoodsManagement:
+  connectTimeout: 2000
+  readTimeout: 5000
+  loggerLevel: none
+jaycong.swagger.title: Admin 后台管理 API
+jaycong.swagger.description: 会员、操作记录和商品管理统一入口，需要有效管理员会话。
+springdoc.packages-to-scan: io.github.jaycong.admin.controller
+springdoc.paths-to-match: /admin/**

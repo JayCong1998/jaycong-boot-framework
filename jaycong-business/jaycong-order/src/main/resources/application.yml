@@ -1,0 +1,59 @@
+server:
+  port: ${ORDER_PORT:8086}
+
+spring:
+  config:
+    import:
+      - classpath:bootstrap.yml
+  cloud:
+    openfeign:
+      client:
+        config:
+          goodsRead:
+            connectTimeout: 2000
+            readTimeout: 3000
+            loggerLevel: none
+  data:
+    redis:
+      host: ${AUTH_REDIS_HOST:localhost}
+      port: ${AUTH_REDIS_PORT:6379}
+      password: ${AUTH_REDIS_PASSWORD:}
+      database: ${AUTH_REDIS_DATABASE:0}
+      connect-timeout: 3s
+      timeout: 3s
+  datasource:
+    url: ${ORDER_DB_URL:jdbc:mysql://localhost:3306/jaycong-framework?useUnicode=true&characterEncoding=UTF-8&sslMode=PREFERRED&serverTimezone=Asia/Shanghai}
+    username: ${ORDER_DB_USERNAME:root}
+    password: ${ORDER_DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      # 订单表仅允许手工创建。
+      mode: never
+
+jaycong:
+  rpc:
+    goods:
+      # 默认按 goods 服务名寻址；兼容旧订单地址配置和环境变量。
+      url: ${GOODS_SERVICE_URL:${jaycong.order.goods-url:${ORDER_GOODS_URL:}}}
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 86400
+  is-read-cookie: false
+  is-read-body: false
+  is-log: false
+  token-style: uuid
+  is-share: false
+  token-session-check-login: true
+
+# 控制台展示同步请求的 requestId，便于关联业务及异常日志。
+logging:
+  charset:
+    console: UTF-8
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [${spring.application.name:application}] [%thread] [requestId=%X{requestId:-}] %logger{40} - %msg%n%wEx"
+  level:
+    root: INFO
+    io.github.jaycong: INFO

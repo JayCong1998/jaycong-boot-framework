@@ -1,0 +1,72 @@
+jaycong:
+  swagger:
+    title: User 用户服务 API
+    description: 用户内部服务；后台管理文档统一由 Admin 提供。
+
+springdoc:
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:true}
+  swagger-ui:
+    enabled: ${API_DOCS_ENABLED:true}
+  packages-to-scan: io.github.jaycong.user.controller
+  paths-to-match: /public/**
+
+server:
+  port: ${USER_PORT:8087}
+
+spring:
+  config:
+    import:
+      - classpath:bootstrap.yml
+  data:
+    redis:
+      host: ${AUTH_REDIS_HOST:localhost}
+      port: ${AUTH_REDIS_PORT:6379}
+      password: ${AUTH_REDIS_PASSWORD:}
+      database: ${AUTH_REDIS_DATABASE:0}
+      connect-timeout: 3s
+      timeout: 3s
+  datasource:
+    url: ${USER_DB_URL:jdbc:mysql://localhost:3306/jaycong-framework?useUnicode=true&characterEncoding=UTF-8&sslMode=PREFERRED&serverTimezone=Asia/Shanghai}
+    username: ${USER_DB_USERNAME:root}
+    password: ${USER_DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      # 建表和初始账号仅允许手工执行。
+      mode: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 86400
+  is-read-cookie: false
+  is-read-body: false
+  is-log: false
+  token-style: uuid
+  is-share: false
+  token-session-check-login: true
+
+# 控制台展示同步请求的 requestId，便于关联业务及异常日志。
+logging:
+  charset:
+    console: UTF-8
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [${spring.application.name:application}] [%thread] [requestId=%X{requestId:-}] %logger{40} - %msg%n%wEx"
+  level:
+    root: INFO
+    io.github.jaycong: INFO
+
+
+
+# Admin、User、Goods 配置相同的内部管理调用凭证，禁止放入前端配置。
+jaycong.rpc.admin.token: ${ADMIN_SERVICE_TOKEN:}

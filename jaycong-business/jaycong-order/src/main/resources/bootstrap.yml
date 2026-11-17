@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: order
+  config:
+    import:
+      - classpath:jaycong-nacos.yml
+      - nacos:order.yml?refreshEnabled=true

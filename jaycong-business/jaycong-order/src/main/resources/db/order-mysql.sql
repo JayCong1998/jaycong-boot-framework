@@ -1,0 +1,28 @@
+-- 在目标数据库手工执行；应用不自动建表。
+CREATE TABLE `trade_order` (
+  `id` bigint NOT NULL COMMENT '订单ID，由应用生成',
+  `order_no` varchar(64) NOT NULL COMMENT '订单编号',
+  `user_id` bigint NOT NULL COMMENT '下单用户ID',
+  `goods_id` bigint NOT NULL COMMENT '商品ID',
+  `goods_code` varchar(64) NOT NULL COMMENT '下单时的商品编码快照',
+  `goods_name` varchar(128) NOT NULL COMMENT '下单时的商品名称快照',
+  `goods_cover_url` varchar(512) NOT NULL DEFAULT '' COMMENT '下单时的商品封面地址快照',
+  `total_amount` bigint NOT NULL COMMENT '订单成交金额，单位为人民币分',
+  `status` tinyint NOT NULL DEFAULT '0' COMMENT '订单状态：0待支付，1已支付待交付，2已完成，3已取消',
+  `remark` varchar(500) NOT NULL DEFAULT '' COMMENT '订单备注',
+  `expire_time` datetime(3) NOT NULL COMMENT '支付截止时间，由应用设置',
+  `pay_time` datetime(3) DEFAULT NULL COMMENT '支付成功时间',
+  `finish_time` datetime(3) DEFAULT NULL COMMENT '数字商品交付完成时间',
+  `cancel_time` datetime(3) DEFAULT NULL COMMENT '订单取消时间',
+  `cancel_reason` varchar(255) NOT NULL DEFAULT '' COMMENT '订单取消原因',
+  `create_time` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  `update_time` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '更新时间，由应用维护',
+  `create_user_id` bigint NOT NULL DEFAULT '0' COMMENT '创建人ID，0表示系统操作',
+  `update_user_id` bigint NOT NULL DEFAULT '0' COMMENT '更新人ID，0表示系统操作',
+  `deleted` tinyint NOT NULL DEFAULT '0' COMMENT '逻辑删除标识：0未删除，1已删除',
+  `lock_version` int NOT NULL DEFAULT '0' COMMENT '乐观锁版本号',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_trade_order_no` (`order_no`),
+  KEY `idx_trade_order_user_time` (`user_id`,`deleted`,`create_time`,`id`),
+  KEY `idx_trade_order_status_expire` (`status`,`deleted`,`expire_time`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='数字商品订单表';

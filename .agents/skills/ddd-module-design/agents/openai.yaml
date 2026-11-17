@@ -1,0 +1,4 @@
+interface:
+  display_name: "DDD模块设计"
+  short_description: "跨项目复用 Java/Spring 轻量 DDD 分层规范，附一个模块示例"
+  default_prompt: "使用 $ddd-module-design，按目标工程约定设计业务模块，参考单模块案例确定职责，完成实现与必要验证。"

@@ -1,0 +1,8 @@
+# 由 application.yml 显式导入，使用 Config Data 加载。
+spring:
+  application:
+    name: admin
+  config:
+    import:
+      - classpath:jaycong-nacos.yml
+      - nacos:admin.yml?refreshEnabled=true

@@ -13,15 +13,12 @@
 
     <modules>
         <module>jaycong-bom</module>
-        <module>jaycong-core</module>
-        <module>jaycong-context</module>
-        <module>jaycong-web-spring-boot-starter</module>
-        <module>jaycong-mybatis-spring-boot-starter</module>
-        <module>jaycong-example</module>
-        <module>jaycong-stock-service</module>
-        <module>jaycong-order-service</module>
-        <module>jaycong-jvm</module>
-        <module>jaycong-juc</module>
+        <!-- 公共聚合包含按需引入的 jaycong-common-swagger 等子模块。 -->
+        <module>jaycong-common</module>
+        <module>jaycong-gateway</module>
+        <module>jaycong-auth</module>
+        <module>jaycong-admin</module>
+        <module>jaycong-business</module>
     </modules>
 
     <properties>
@@ -35,13 +32,13 @@
 
     <dependencyManagement>
         <dependencies>
-        <dependency>
-            <groupId>io.github.jaycong</groupId>
-            <artifactId>jaycong-bom</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
+            <dependency>
+                <groupId>io.github.jaycong</groupId>
+                <artifactId>jaycong-bom</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

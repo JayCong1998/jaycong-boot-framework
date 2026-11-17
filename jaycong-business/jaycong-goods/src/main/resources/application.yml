@@ -1,0 +1,50 @@
+server:
+  port: ${GOODS_PORT:8085}
+
+spring:
+  config:
+    import: classpath:bootstrap.yml
+  data:
+    redis:
+      host: ${AUTH_REDIS_HOST:localhost}
+      port: ${AUTH_REDIS_PORT:6379}
+      password: ${AUTH_REDIS_PASSWORD:}
+      database: ${AUTH_REDIS_DATABASE:0}
+      connect-timeout: 3s
+      timeout: 3s
+  cloud:
+    openfeign:
+      client:
+        config:
+          authUser:
+            connectTimeout: 2000
+            readTimeout: 5000
+  datasource:
+    url: ${GOODS_DB_URL:jdbc:mysql://localhost:3306/jaycong-framework?useUnicode=true&characterEncoding=UTF-8&sslMode=PREFERRED&serverTimezone=Asia/Shanghai}
+    username: ${GOODS_DB_USERNAME:root}
+    password: ${GOODS_DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      # 建表及示例数据只能手工执行。
+      mode: never
+
+jaycong:
+  rpc:
+    user:
+      # 与 User 服务的内部调用凭证一致，不写入前端配置。
+      token: ${USER_SERVICE_TOKEN:}
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 86400
+  is-read-cookie: false
+  is-read-body: false
+  is-log: false
+  token-style: uuid
+  is-share: false
+  token-session-check-login: true
+
+# Admin、User、Goods 配置相同的内部管理调用凭证，禁止放入前端配置。
+jaycong.rpc.admin.token: ${ADMIN_SERVICE_TOKEN:}

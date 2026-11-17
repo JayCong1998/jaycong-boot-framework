@@ -1,0 +1,8 @@
+# 使用 Config Data 加载公共 Nacos 连接和商品服务配置。
+spring:
+  application:
+    name: goods
+  config:
+    import:
+      - classpath:jaycong-nacos.yml
+      - nacos:goods.yml?refreshEnabled=true

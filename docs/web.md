@@ -1,8 +1,8 @@
-# Web Starter 与最小 Example
+# Web Starter 使用说明
 
 ## 接入
 
-引入 `jaycong-web-spring-boot-starter` 即可获得 Spring MVC、Jakarta Validation 和全局异常处理。
+引入 `jaycong-common-web` 即可获得 Spring MVC、Jakarta Validation、全局异常处理和控制台访问日志。
 Starter 使用 `AutoConfiguration.imports` 注册，仅在 Servlet Web 应用中生效。
 业务应用保留自己的 `@SpringBootApplication` 扫描范围，无需扫描 `io.github.jaycong.web`。
 响应统一包含 `success`、`code`、`message`、`data`；code 为整数，success 为由 code 自动推导的布尔值。
@@ -14,7 +14,10 @@ Starter 使用 `AutoConfiguration.imports` 注册，仅在 Servlet Web 应用中
 | --- | --- | --- | --- |
 | 正常请求 | 200 | `0` | 成功 |
 | 请求 DTO 校验、MVC 方法参数校验、缺少参数、类型转换错误、JSON 格式错误 | 400 | `400` | 参数错误 |
-| `BusinessException` | 422 | 业务错误码 | 异常中的公开消息 |
+| 使用 `ErrorCode` 构造的 `BusinessException` | 422 | 业务错误码 | 异常中的公开消息 |
+| 使用 `status` 构造的 `BusinessException` 及业务子类 | 异常指定的 400～599 状态 | 与状态相同 | 异常中的公开消息 |
+| Sa-Token `NotLoginException` | 401 | `401` | 未登录或登录已失效 |
+| `AuthContextUnavailableException` | 503 | `503` | 登录会话服务暂不可用，请稍后重试 |
 | 路由或静态资源不存在 | 404 | `404` | 资源不存在 |
 | 其他 MVC 协议异常，如不支持的方法或媒体类型 | 保留原状态，如 405、415 | `405`、`415` 等 | HTTP 原因短语 |
 | 未知异常或 MVC 服务端错误 | 500（MVC 原生服务端错误保留其状态） | `500` | 系统异常 |
@@ -30,54 +33,38 @@ DTO 使用 `@Valid @RequestBody`，字段使用 `@NotBlank` 等约束；查询�
 实现基于 [Spring ResponseEntityExceptionHandler](https://docs.spring.io/spring-framework/docs/6.2.x/javadoc-api/org/springframework/web/servlet/mvc/method/annotation/ResponseEntityExceptionHandler.html)，
 方法校验约定见 [Spring MVC Validation](https://springframework.org/spring-framework/reference/6.2/web/webmvc/mvc-controller/ann-validation.html)。
 
-需要替换默认行为时，声明一个 `GlobalExceptionHandler` 类型（或其子类）的 Bean，自动配置会退让。
-也可使用更高优先级的业务 `@RestControllerAdvice`；框架 advice 优先级为 `LOWEST_PRECEDENCE`。
+所有 Servlet 模块统一使用 common-web 的 `GlobalExceptionHandler`，业务模块及 common-satoken 不再声明自己的异常处理器。
+业务异常继承 common-core 的 `BusinessException`，保留业务原因及公开消息；已有明确 HTTP 状态时调用 `super(status, message)`，需要诊断原因时调用 `super(status, message, cause)`。
+原有 `ErrorCode` 构造方式仍默认返回 422，错误码与 HTTP 状态独立。数据库等技术异常由业务仓储在已知边界转换为业务异常，不在公共处理器中硬编码业务表的规则。
+common-web 仅增加 `sa-token-core` 以识别登录异常，不引入认证 Starter 或 Redis，也不启用登录会话。
+需要整体替换默认行为时，声明一个 `GlobalExceptionHandler` 类型（或其子类）的 Bean，自动配置会退让；框架 advice 优先级为 `LOWEST_PRECEDENCE`。
 
-## 运行 Example
+## 控制台请求日志
 
-```powershell
-mvn -B -ntp clean verify
-java -jar jaycong-example/target/jaycong-example-0.1.0-SNAPSHOT.jar
+common-web 通过自动配置注册 `RequestLogFilter`，默认开启，无需扩大组件扫描范围。
+
+- `HTTP请求开始`：requestId、method、uri（不含查询串）、ip（直接连接的远端地址）。
+- `HTTP请求结束`：同一 requestId、method、uri、ip、status、cost；逃出调用链的异常另记录异常类型。
+- 正常结束为 INFO；4xx 或耗时达到 3000ms 为 WARN；5xx 或逃出调用链的异常为 ERROR。MVC 已处理的异常按最终响应状态分类。
+
+响应头 `X-Request-Id` 返回生成的请求编号。同步调用链的 MDC 保存 `requestId`，结束后恢复原值，业务及异常日志可用 `%X{requestId}` 关联。不采集查询参数、请求头、请求体和响应体；不要把敏感信息放进 URL 路径。
+
+当前针对同步 Servlet 请求；异步请求的结束日志表示初次 Filter 调用返回，不代表异步响应完成，MDC 不会自动传播到异步线程。未处理异常的结束状态是 Filter 退出时的响应状态，容器后续错误处理可能改变实际状态。
+
+```yaml
+jaycong:
+  web:
+    access-log:
+      enabled: true
+logging:
+  level:
+    io.github.jaycong.web.access: INFO
 ```
 
-默认端口为 8080；已有 H2 驱动使数据源使用临时内存数据库，不需要安装 MySQL。
-本步没有 Mapper，启动时 MyBatis 可能提示未发现 Mapper，不影响演示接口。
-也可先在根目录执行 `mvn -B -ntp install`，再执行
-`mvn -B -ntp -pl jaycong-example spring-boot:run`。
+`enabled: false` 关闭框架默认注册；应用可提供 `RequestLogFilter` Bean 替换默认实现。业务自定义 Bean 的生命周期和启用行为由业务负责。
 
-接口：`POST /example/greetings`，请求 Content-Type 为 `application/json`。
+Auth、Gateway 的 `application.yml` 已配置 UTF-8 控制台、root 和项目包 INFO 级别，以及时间、级别、应用名、线程、requestId、logger 和消息；异常堆栈继续输出。可通过原生 `logging.level.*` 覆盖级别，不建议全局 DEBUG。Nacos 若配置相同日志键，会覆盖本地默认值。
 
-| 请求体 | HTTP | 返回 |
-| --- | --- | --- |
-| `{"name":"Jay"}` | 200 | `{"success":true,"code":0,"message":"成功","data":"Hello, Jay!"}` |
-| `{"name":" "}` | 400 | `{"success":false,"code":400,"message":"参数错误","data":null}` |
-| `{"name":"admin"}` | 422 | `{"success":false,"code":10001,"message":"该名称为系统保留名称","data":null}` |
+网关保留 Netty 的 `event=http_access` 响应结束摘要，不引入 Servlet Filter；网关日志的 requestId 为空，当前不提供跨服务链路追踪。
 
-`admin` 为演示用业务保留名称，忽略大小写及首尾空白。
-在 PowerShell 中逐条调用并查看状态和响应（包括非 2xx）：
-
-```powershell
-Add-Type -AssemblyName System.Net.Http
-$client = [System.Net.Http.HttpClient]::new()
-try {
-    foreach ($body in '{"name":"Jay"}', '{"name":" "}', '{"name":"admin"}') {
-        $content = [System.Net.Http.StringContent]::new($body, [System.Text.Encoding]::UTF8, 'application/json')
-        $response = $client.PostAsync('http://localhost:8080/example/greetings', $content).GetAwaiter().GetResult()
-        try {
-            [int]$response.StatusCode
-            $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
-        } finally {
-            $response.Dispose()
-            $content.Dispose()
-        }
-    }
-} finally {
-    $client.Dispose()
-}
-```
-
-## 验证
-
-`mvn -B -ntp clean verify` 执行全部测试，并打包可执行 JAR。
-Web 测试通过未扫描 Starter 包的应用验证自动发现及异常响应，另测 Servlet 条件和用户 Bean 退让。
-Example 测试以随机端口启动真实服务器，检查上述三条路径的 HTTP 状态与 JSON 响应。
+启动 Auth 后访问 `http://localhost:8084/auth/status`，控制台应出现同一 requestId 的开始、结束日志，响应头也包含该编号；通过网关访问时还可看到网关的访问摘要。端口以实际配置为准。

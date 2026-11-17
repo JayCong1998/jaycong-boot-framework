@@ -1,0 +1,63 @@
+jaycong:
+  swagger:
+    title: Auth 认证服务 API
+    description: 注册、登录与当前会话管理；登录后将 tokenValue 填入 Authorize。
+
+springdoc:
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:true}
+  swagger-ui:
+    enabled: ${API_DOCS_ENABLED:true}
+  packages-to-scan: io.github.jaycong.auth.controller
+  paths-to-match: /auth/**
+
+server:
+  port: ${AUTH_PORT:8084}
+
+spring:
+  config:
+    import:
+      - classpath:bootstrap.yml
+  data:
+    redis:
+      host: ${AUTH_REDIS_HOST:localhost}
+      port: ${AUTH_REDIS_PORT:6379}
+      password: ${AUTH_REDIS_PASSWORD:}
+      database: ${AUTH_REDIS_DATABASE:0}
+      connect-timeout: 3s
+      timeout: 3s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 86400
+  is-read-cookie: false
+  is-read-body: false
+  is-log: false
+  token-style: uuid
+  is-share: false
+  token-session-check-login: true
+
+# 控制台展示同步请求的 requestId，便于关联业务及异常日志。
+logging:
+  charset:
+    console: UTF-8
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [${spring.application.name:application}] [%thread] [requestId=%X{requestId:-}] %logger{40} - %msg%n%wEx"
+  level:
+    root: INFO
+    io.github.jaycong: INFO
+
+spring.cloud.openfeign.client.config.authUser:
+  connectTimeout: 2000
+  readTimeout: 5000
+  loggerLevel: none

@@ -1,0 +1,8 @@
+# 通过 application.yml 显式导入，使用 Config Data 加载，不依赖传统 bootstrap 上下文。
+spring:
+  application:
+    name: auth
+  config:
+    import:
+      - classpath:jaycong-nacos.yml
+      - nacos:auth.yml?refreshEnabled=true

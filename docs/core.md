@@ -1,6 +1,12 @@
 # Core 使用说明
 
-`jaycong-core` 使用 Java 21，无运行时第三方依赖。包前缀为 `io.github.jaycong.core`。
+`jaycong-common-core` 使用 Java 21，包含轻量的 MyBatis-Plus 注解依赖，不引入数据库驱动或自动配置。包前缀为 `io.github.jaycong.core`。
+
+## 数据库实体基类
+
+所有服务的数据库实体统一继承 `io.github.jaycong.core.model.BaseEntity`，业务实体只声明自身字段。
+基类包含 `id`、`createTime`、`updateTime`、`createUserId`、`updateUserId`、`deleted` 和 `lockVersion`，保留应用生成主键、审计填充、逻辑删除和乐观锁注解。
+自动填充及乐观锁插件由 `jaycong-common-datasource` 提供，仅继承基类不会自动启用这些能力。纯领域模型不强制继承数据库实体基类。
 
 ## 返回对象
 
@@ -41,7 +47,7 @@ enum OrderError implements ErrorCode {
 ```
 
 通用错误码为 SUCCESS(0)、INVALID_ARGUMENT(400)、NOT_FOUND(404)、SYSTEM_ERROR(500)。
-业务模块自行定义不重复的整数领域错误码，如 Example 的 NAME_RESERVED(10001)。
+业务模块自行定义不重复的整数领域错误码，如 NAME_RESERVED(10001)。
 业务错误码与 HTTP 状态独立，例如 NAME_RESERVED 响应中的 code 为 10001，HTTP 状态为 422。
 BusinessException 通过 `getCode()`、`getMessage()` 和 `getCause()` 访问。
 message 应可向调用方展示；cause 用于内部诊断，Web 层负责异常到响应的映射。
@@ -81,4 +87,4 @@ List<String> rows = page.rows();
 
 ## 测试
 
-在项目根目录运行 `mvn -B -ntp -pl jaycong-core -am test`。
+在项目根目录运行 `mvn -B -ntp -pl jaycong-common-core -am test`。

@@ -6,9 +6,8 @@
 
 已初始化 Maven 多模块工程、版本管理及依赖关系，并实现 Core 的统一返回、
 错误码、业务异常和分页模型。Web Starter 已实现自动配置、全局异常处理和
-MVC 参数校验；Example 提供可运行的最小接口与真实 HTTP 集成测试。
-MyBatis Starter 已实现自动分页、基础实体和时间审计填充；Example 提供 H2 CRUD、
-分页接口及 MySQL profile。Example 已启用 Spring Boot repackage，可直接运行打包 JAR。
+MVC 参数校验。Datasource 模块提供 MyBatis-Plus 分页、逻辑删除、乐观锁和审计字段填充。
+当前可运行应用包含 Auth、Admin、User、Goods、Order 与 Gateway。后台管理请求统一通过 Admin 调用业务服务。
 
 ## 环境
 
@@ -24,56 +23,62 @@ MyBatis Starter 已实现自动分页、基础实体和时间审计填充；Exam
 
 | 模块 | 职责 |
 | --- | --- |
+| jaycong-admin | 后台管理统一入口，通过 RPC 调用 User/Goods，与 Auth、Gateway 同级，默认端口 8088，见 [使用说明](docs/admin.md) |
+| jaycong-auth | 认证 HTTP 入口，远程调用 User 并管理 Redis 会话，默认端口 8084，见 [使用说明](docs/auth.md) |
+| jaycong-user | 用户领域与 Facade 服务，位于 Business 下，持有数据库和会员管理能力，默认端口 8087，见 [使用说明](docs/user.md) |
+| jaycong-business | 业务模块聚合父模块，子模块继承其 POM |
+| jaycong-goods | 商品业务模块骨架，位于 `jaycong-business/` 下 |
+| jaycong-pay | 支付业务模块骨架，位于 `jaycong-business/` 下 |
+| jaycong-order | 订单业务模块骨架，位于 `jaycong-business/` 下 |
+| jaycong-gateway | WebFlux 微服务网关，默认端口 8090，见 [使用说明](docs/gateway.md) |
 | jaycong-bom | 独立 BOM，管理框架、Spring Boot 和 MyBatis-Plus 依赖版本 |
-| jaycong-core | 已实现基础模型、错误码与异常；零运行时依赖，JUnit 仅用于测试 |
-| jaycong-context | 请求/用户上下文及 Spring 线程池扩展 |
-| jaycong-web-spring-boot-starter | Servlet 自动配置、统一异常响应、MVC 参数校验 |
-| jaycong-mybatis-spring-boot-starter | MyBatis-Plus 自动配置、分页转换、基础实体和时间审计 |
-| jaycong-example | 可运行的 Web/CRUD 示例、H2 默认配置及 MySQL profile |
-| jaycong-order-service | A 服务：创建订单，通过 HTTP 调用 B，提供本地事务回滚演示 |
-| jaycong-stock-service | B 服务：独立库存数据库、原子扣减接口 |
+| jaycong-common | 公共技术模块聚合父模块，不作为业务功能依赖 |
+| jaycong-common-rpc | OpenFeign 与 LoadBalancer 依赖组合，goods、order、pay 已引用，见 [接入说明](docs/rpc.md) |
+| jaycong-common-core | 已实现基础模型、错误码与异常；零运行时依赖，JUnit 仅用于测试 |
+| jaycong-common-web | Servlet 自动配置、统一异常响应、MVC 参数校验 |
+| jaycong-common-datasource | MyBatis-Plus 自动配置、分页、逻辑删除、乐观锁和审计字段填充 |
+| jaycong-common-satoken | Sa-Token、Redis 会话与 AuthContext 登录身份入口，见 [接入说明](docs/satoken.md) |
+| jaycong-common-redis | Redis Starter 与默认字符串键、JSON 值序列化配置 |
+| jaycong-common-config | Nacos 注册发现与配置中心，见 [使用说明](docs/config.md) |
 | docs | 设计和开发文档，不是 Maven 模块 |
+| mall-admin | 独立 Vue 3 + Element Plus 运营后台，默认端口 5174，含 Auth 登录/退出，见 [启动说明](mall-admin/README.md)；不是 Maven 模块 |
 
-依赖方向：Example → Web/MyBatis Starter → Context → Core。
-根 POM 聚合全部模块并管理构建；BOM 不继承根 POM，避免循环导入。
-数据库驱动仅在 Example 中引入，使用框架的业务项目自行选择驱动。
+依赖方向：业务应用 → Web/Datasource → Core。
+根 POM 聚合全部模块并管理构建；六个公共模块位于 `jaycong-common/` 下，继承 Common 聚合父 POM。
+Common 不统一引入功能依赖，业务按需引入具体子模块；BOM 不继承根 POM，避免循环导入。
+本次迁移统一了 Maven artifactId，Java 包名保持不变；外部项目需更新依赖坐标并重新 install。
+模块路径、坐标及依赖说明见 [Common 模块说明](docs/common.md)。
+Common Datasource 默认包含 MySQL JDBC runtime 驱动；其他数据库项目可排除该驱动并添加所需驱动。
+
+Business 聚合 goods、pay、order、user 业务模块；User 承载用户领域、Facade 和会员管理，Auth 通过 OpenFeign 调用 User。各模块按需引入 Common 子模块，应用间共享 common-api 契约，不依赖对方应用 JAR。
+这些业务模块暂不面向外部项目提供公共依赖，因此未加入 BOM。
+新增业务模块时，在 `jaycong-business/pom.xml` 的 `<modules>` 中注册，并继承该父 POM。
 
 ## 构建
 
 在项目根目录运行：
 
 ```powershell
-mvn -B -ntp clean verify
+mvn -B -ntp package -DskipTests
 ```
 
 安装到本地仓库，供其他项目使用：
 
 ```powershell
-mvn -B -ntp clean install
+mvn -B -ntp install -DskipTests
 ```
 
 仅构建一个模块及其所需模块：
 
 ```powershell
-mvn -B -ntp -pl jaycong-web-spring-boot-starter -am verify
+mvn -B -ntp -pl :jaycong-common-web -am package -DskipTests
 ```
 
 IDEA 中打开根目录的 pom.xml，项目 SDK 选择 JDK 21，加载 Maven 工程。
-构建会执行 Core 契约测试、Web Starter 测试、MyBatis 自动配置及 H2 测试，
-以及 Example 的真实 HTTP 集成测试。
+Auth 服务启动方式见 [Auth 使用说明](docs/auth.md)，网关启动与路由见 [Gateway 使用说明](docs/gateway.md)。
 
-运行最小示例（默认端口 8080，使用自动配置的 H2 内存数据库，无需外部数据库）：
-
-```powershell
-java -jar jaycong-example/target/jaycong-example-0.1.0-SNAPSHOT.jar
-```
-
-接口调用、异常映射和自动配置扩展见 [Web Starter 使用说明](docs/web.md)。
-数据库接入、分页、审计字段及 CRUD 接口见 [MyBatis Starter 使用说明](docs/mybatis.md)。
-
-A 服务调用 B 服务的下单扣库存示例见 [订单与库存服务使用说明](docs/order-stock.md)。
-默认分别运行在 8081、8082，使用独立 H2 数据库，并提供 MySQL 配置。
-当前仅使用本地事务，可通过故障开关演示跨服务数据不一致，尚未引入分布式事务。
+接口异常映射和自动配置扩展见 [Web Starter 使用说明](docs/web.md)。
+数据库接入、分页、逻辑删除、乐观锁及审计字段见 [Datasource 模块说明](docs/datasource.md)。
 
 ## Core 使用
 
@@ -99,7 +104,7 @@ A 服务调用 B 服务的下单扣库存示例见 [订单与库存服务使用�
 <dependencies>
     <dependency>
         <groupId>io.github.jaycong</groupId>
-        <artifactId>jaycong-web-spring-boot-starter</artifactId>
+        <artifactId>jaycong-common-web</artifactId>
     </dependency>
 </dependencies>
 ```
@@ -110,7 +115,6 @@ BOM 只管理依赖版本，不引入功能，也不管理消费项目的构建�
 ## 后续开发顺序
 
 1. Core（已完成）：统一返回对象、错误码、业务异常和分页模型。
-2. Context：上下文保存、清理及线程池透传。
+2. 上下文：暂不保留空模块，待认证与异步透传需求明确后设计。
 3. Web：自动配置、异常映射、MVC 参数校验已完成；TraceId 待实现。
-4. MyBatis：基础实体、分页、时间审计字段自动填充已完成；用户审计待 Context 接入。
-5. Example：Web/CRUD 示例与 HTTP 集成测试、H2 和 MySQL 配置已完成。
+4. Datasource：基础实体、分页、逻辑删除、乐观锁和审计字段自动填充已完成。
